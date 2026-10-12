@@ -1,0 +1,31 @@
+aid: ugcagent
+name: UGC Agent
+description: 'UGC Agent is a company surfaced via the API Evangelist harvest backlog (source: new-submission)
+  and added to the network as a stub for full-pipeline profiling.'
+url: https://raw.githubusercontent.com/api-evangelist/ugcagent/refs/heads/main/apis.yml
+x-type: company
+x-source: harvest:new-submission
+x-tier: stub
+x-tier-reason: harvest
+specificationVersion: '0.20'
+created: '2026-10-12'
+modified: '2026-10-12'
+tags:
+- Company
+apis: []
+maintainers:
+- FN: Kin Lane
+  email: kin@apievangelist.com
+- FN: APIs.json
+  email: info@apis.io
+common:
+- type: Website
+  url: https://ugcagent.app/
+- type: Documentation
+  url: https://docs.ugcagent.app/
+x-submission-notes: 'creator sourcing: database of 28k+ Instagram/TikTok creators, CRM, tracking | Kin
+  approved listing 2026-10-12 (case-by-case: real 3.1 API, but its product is a harvested database of
+  Instagram/TikTok creators'' personal data)'
+x-submission-probe: root 200, docs 200, openapi.yaml 200 OpenAPI 3.1.0 ~111 ops (yaml strict-parse failed,
+  counted by grep), llms.txt 200, MCP 405 on GET, soft-404 ok
+x-submitted-by: hello@ugcagent.app (email, 2026-10-12)
