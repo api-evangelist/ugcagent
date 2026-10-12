@@ -1,0 +1,26 @@
+generated: '2026-10-12'
+method: searched
+generator: extract-docs-artifacts.py (local)
+source: https://ugcagent.app/pricing/
+sources:
+- https://ugcagent.app/pricing/
+name: UGC Agent pricing
+audience: business-product
+pricing_basis: per-seat
+plans:
+- name: Pro
+  price_text: $29.00 / month
+  price: 29
+  description: For one marketer finding and hiring creators every month.
+- name: Premium
+  price_text: $59.00 / month
+  price: 59
+  description: For UGC teams running programs across brands, apps or clients.
+- name: Ultra
+  price_text: $199.00 / month
+  price: 199
+  description: For agencies and high-volume teams that want no caps and the API.
+- name: Enterprise
+  price_text: Custom
+  description: Custom contracts, invoicing, and onboarding for your team.
+docs: https://ugcagent.app/pricing/

@@ -1,31 +1,105 @@
 aid: ugcagent
+
 name: UGC Agent
-description: 'UGC Agent is a company surfaced via the API Evangelist harvest backlog (source: new-submission)
-  and added to the network as a stub for full-pipeline profiling.'
+
+image: https://ugcagent.app/og-image.png
+
+description: 'UGC Agent provides a data hub for user‑generated content (UGC) marketing, offering a searchable database of over 28,000 creators with contact details, tools for creator tracking, automated sourcing, and integration with AI agents. Brands can discover, engage, and manage creators across industries, leveraging features like super‑search, CRM, and payout tracking, all via a developer API for programmatic access.'
+
 url: https://raw.githubusercontent.com/api-evangelist/ugcagent/refs/heads/main/apis.yml
+
 x-type: company
+
 x-source: harvest:new-submission
-x-tier: stub
-x-tier-reason: harvest
+
+x-tier: profiled
+x-tier-reason: enrichment pass 2026-10-12 (modular-v1; was harvest)
+
 specificationVersion: '0.20'
+
 created: '2026-10-12'
+
 modified: '2026-10-12'
+
 tags:
 - Company
-apis: []
+- UGC
+- Marketing
+- Data
+- Creators
+
 maintainers:
 - FN: Kin Lane
   email: kin@apievangelist.com
 - FN: APIs.json
   email: info@apis.io
+
 common:
+- type: Plans
+  url: plans/ugcagent-plans-pricing.yml
+- type: Spectral
+  url: rules/ugcagent-rules.yml
+- type: Conformance
+  url: conformance/ugcagent-conformance.yml
+- type: LLMsTxt
+  url: llms/ugcagent-llms.txt
+- type: Hosts
+  url: hosts/ugcagent-hosts.yml
+- type: Vendors
+  url: vendors/ugcagent-vendors.yml
+- type: DeveloperPortal
+  url: https://ugcagent.app/developers/api/
+- type: DomainSecurity
+  url: security/ugcagent-domain-security.yml
 - type: Website
   url: https://ugcagent.app/
 - type: Documentation
   url: https://docs.ugcagent.app/
+- type: APIReference
+  url: https://docs.ugcagent.app/
+- type: Pricing
+  url: https://ugcagent.app/pricing/
+- type: TermsOfService
+  url: https://ugcagent.app/terms/
+- type: PrivacyPolicy
+  url: https://ugcagent.app/privacy/
+- type: Blog
+  url: https://ugcagent.app/blog/
+
+apis:
+- aid: ugcagent:ugcagent-api
+  name: UGC Agent API
+  description: 'UGC Agent API as documented publicly: 1 operations. Contract generated from the documentation by API Evangelist (2026-10-12);
+    not the provider''s own document.'
+  humanURL: https://ugcagent.app/developers/api
+  properties:
+  - type: OpenAPI
+    url: openapi/_ae-authored/ugcagent-openapi-generated.yml
+    x-provenance: generated
+
 x-submission-notes: 'creator sourcing: database of 28k+ Instagram/TikTok creators, CRM, tracking | Kin
   approved listing 2026-10-12 (case-by-case: real 3.1 API, but its product is a harvested database of
   Instagram/TikTok creators'' personal data)'
+
 x-submission-probe: root 200, docs 200, openapi.yaml 200 OpenAPI 3.1.0 ~111 ops (yaml strict-parse failed,
   counted by grep), llms.txt 200, MCP 405 on GET, soft-404 ok
+
 x-submitted-by: hello@ugcagent.app (email, 2026-10-12)
+
+x-coverage:
+  state: unreadable
+  reason: no-machine-readable-spec
+  method: derived
+  generated: '2026-10-12'
+  generator: derive-coverage.py (pre-flight evidence)
+  detail: >-
+    the company publishes developer documentation but serves no machine-readable contract from it
+  evidence:
+  - url: https://ugcagent.app/
+    status: 200
+x-enrichment:
+  date: '2026-10-12'
+  status: enriched
+  artifacts_added: 11
+  pass: modular-v1
+  engine: identity=local,contract=local,surfaces=local,docs=local,regulatory=local

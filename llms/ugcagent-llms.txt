@@ -1,0 +1,261 @@
+# UGC Agent API v2.2.0
+
+Two ways in, one engine.
+
+POST /v1/messages is the conversational surface: send a message, the agent
+picks its tools and answers with prose plus any creators it found.
+
+The resource endpoints are for products that build on the engine directly,
+and they mirror the tabs of the web app:
+- Lists: persistent, appendable creator collections (`/v1/lists`).
+- Creator searches: background sourcing jobs with structured filters,
+  partial results while running, and optional list targeting
+  (`/v1/creator-searches`).
+- Webhooks: signed push of `lead.added` and job events (`/v1/webhooks`).
+- Automations: recurring lead sourcing into a list, or recurring trend
+  research by email (`/v1/automations`).
+- Chats: list, rename, read and delete the chats in your web app sidebar
+  (`/v1/chats`).
+- Creator CRM: every creator you saved, with pipeline stage, deal terms,
+  notes, tasks and CRM lists (`/v1/leads`, `/v1/lead-lists`,
+  `/v1/lead-exports`).
+- UGC Database: browse already-sourced creators and unlock them into the
+  CRM (`/v1/database`).
+- UGC Brands: brands that run UGC creator programs, their attributed
+  accounts, videos and playbook (`/v1/ugc-brands`).
+- Creator Tracking: tracked accounts, their videos, collections and
+  payouts (`/v1/tracking`).
+- Applications: import, review and answer creator applications
+  (`/v1/applications`).
+- Outreach integrations: push creators into Instantly or Smartlead
+  campaigns (`/v1/integrations`).
+- Workspace: Agent Preferences, excluded creators and account usage
+  (`/v1/preferences`, `/v1/account`).
+- Research jobs: creator account analyses, creator enrichments, brand
+  research and trend research (`/v1/creator-analyses`,
+  `/v1/creator-enrichments`, `/v1/brand-researches`,
+  `/v1/trend-researches`).
+
+Plan gates mirror the app. When the workspace plan does not include 
+feature, the call answers 402 with error.code `upgrade_required` and
+error.required_plan naming the lowest plan that unlocks it.
+
+The typical integration: create a list, register a `lead.added` webhook on
+it, then start searches (or an automation) with `list_id` set. Every creator
+that qualifies is appended to the list and pushed to the webhook as it
+lands, and later searches never return anyone already in the list.
+
+POST /v1/messages runs a turn and waits for the result. A turn that outruns
+the wait window answers 202 with a Location header; poll it with
+GET /v1/messages/{id} until stop_reason is no longer "pending".
+
+API access is available to Ultra and Enterprise workspaces, neither of
+which has a monthly credit ceiling. A turn that returns leads consumes
+credits, which are metered per workspace and reported in
+Account -> API -> Usage.
+
+Ultra workspaces may make 100 job-creating calls per UTC day and 2,000 per
+calendar month (UTC). Enterprise workspaces have no call caps. Premium
+workspaces lost API access on 2026-09-08. Job-creating calls are:
+POST /v1/messages, POST /v1/creator-searches, POST /v1/automations,
+POST /v1/automations/{id}/runs, POST /v1/creator-analyses,
+POST /v1/creator-enrichments, POST /v1/brand-researches,
+POST /v1/trend-researches, POST /v1/application-reviews with
+`analyze_accounts: true`, and POST /v1/application-video-analyses. An
+idempotent replay or a call that fails before creating work is not
+counted. Reads, polling and every other endpoint do not count against the
+call quota (they are still rate limited per minute). Every job-creating
+response carries X-Quota-Daily-Limit, X-Quota-Daily-Remaining,
+X-Quota-Daily-Reset, X-Quota-Monthly-Limit, X-Quota-Monthly-Remaining and
+X-Quota-Monthly-Reset. An exhausted window answers 429 with error.code
+api_daily_quota_exceeded or api_monthly_quota_exceeded and a Retry-After
+pointing at the reset. Enterprise workspaces have no call caps (the
+headers read "unlimited").
+
+Every response carries X-Request-Id; the same value is in error.request_id
+on failures.
+
+Team workspaces: every key addresses the workspace (the team owner's
+lead pool, call quota, lists, webhooks, automations, creator searches and
+research jobs). On per-person surfaces (Creator CRM, chats, outreach
+integrations, Agent Preferences, applications, Creator Tracking) a key
+acts as the team member who created it, like that member in the app.
+Keys created before member attribution act as the workspace owner.
+
+Idempotency: mutations accept an Idempotency-Key header. A completed key
+replays its result for 24 hours; a duplicate that arrives while the first
+request is still running answers 409 idempotency_in_progress with
+Retry-After; only successes and 400/422 validation errors are stored, so 
+5xx, 402, 404, 409 or 429 releases the key for a retry. Automations keep
+their own receipt flow (a replay returns the stored automation or run).
+
+Hosted MCP: the UGC Agent MCP server calls this same API on behalf of
+Premium, Ultra and Enterprise users. Metered job endpoints (POST
+/v1/messages, /v1/creator-searches, /v1/automations,
+/v1/automations/{id}/runs and the four research jobs) answer MCP callers
+403 not_available_on_mcp; MCP sourcing runs through its run_ugc_agent
+tool, which draws on the plan's lead pool like the app.
+
+## Guides
+- [Introduction](/#/)
+- [Quickstart](/#/quickstart)
+- [Authentication](/#/authentication)
+- [Errors](/#/errors)
+- [Rate limits & credits](/#/rate-limits)
+- [Lists, jobs & webhooks](/#/lists-and-webhooks)
+- [Idempotency](/#/idempotency)
+
+## Product areas
+- [Creator CRM](/#/creator-crm): saved creators as CRM leads (/v1/leads): pipeline stages, deal terms, notes, tasks, touches, CRM lists and CSV export; saving from the UGC Database costs 1 lead.
+- [UGC Database](/#/ugc-database): browse the shared pool of already-sourced creators with filters and facets, emails masked until you unlock one (1 lead each, saved to your Creator CRM).
+- [UGC Brands](/#/ugc-brands): read-only database of brands that run UGC creator programs: program facts, attributed creator accounts with evidence, brand videos and a playbook of what works. Plan-gated like the app.
+- [Creator Tracking](/#/creator-tracking): track Instagram and TikTok accounts, read per-video views, virality and CPM, run collections (campaigns) and weekly payouts over /v1/tracking.
+- [Applications](/#/applications): Import creator applications from form exports, review and rank them against your criteria, set statuses, draft replies (never sent) and analyze sample videos.
+- [Outreach integrations](/#/outreach-integrations): Send unlocked creators to Instantly or Smartlead campaigns, list campaigns, and control auto-send. Vendor keys are connected in the app only.
+- [Workspace, preferences & account](/#/workspace): Agent Preferences and excluded creators that shape every search, the account usage summary (plan, lead pool, API call quota), and chats (list, rename, read, delete).
+- [Trend automations](/#/trend-automations): Scheduled trend research reports and lead sourcing automations over /v1/automations, with run results, test emails and delivery retries.
+- [Research jobs](/#/research): Structured async jobs for one capability each: analyze a creator account, enrich creators by handle or URL, find a brand's verified creators, and research current trends; each POST is one job-creating call, poll the Location URL.
+
+## Connectors
+- [Meta Muse connector](/#/muse-connector): UGC Agent as an MCP connector for Meta Muse and other MCP clients. Endpoint https://mcp.ugcagent.app/mcp, Premium or higher (bearer API key on Ultra or Enterprise), full tool catalogue by area with plan, cost and confirmation flow, limits, data handling.
+
+## API reference
+
+### Messages
+- POST /v1/messages: Send a message (/#/reference/createMessage)
+- GET /v1/messages/{id}: Retrieve a message (/#/reference/getMessage)
+
+### Lists
+- GET /v1/lists: List lists (/#/reference/listLists)
+- POST /v1/lists: Create a list (/#/reference/createList)
+- GET /v1/lists/{id}: Retrieve a list (/#/reference/getList)
+- PATCH /v1/lists/{id}: Update a list (/#/reference/updateList)
+- DELETE /v1/lists/{id}: Delete a list (/#/reference/deleteList)
+- GET /v1/lists/{id}/leads: List leads in a list (/#/reference/listListLeads)
+- POST /v1/lists/{id}/leads: Add leads to a list (/#/reference/addListLeads)
+- GET /v1/lists/{id}/leads/{lead_id}: Retrieve a lead (/#/reference/getListLead)
+- DELETE /v1/lists/{id}/leads/{lead_id}: Remove a lead from a list (/#/reference/removeListLead)
+
+### Creator Searches
+- GET /v1/creator-searches: List creator searches (/#/reference/listCreatorSearches)
+- POST /v1/creator-searches: Start a creator search (/#/reference/createCreatorSearch)
+- GET /v1/creator-searches/{id}: Retrieve a creator search (/#/reference/getCreatorSearch)
+- DELETE /v1/creator-searches/{id}: Delete a creator search (/#/reference/deleteCreatorSearch)
+- POST /v1/creator-searches/{id}/cancel: Cancel a creator search (/#/reference/cancelCreatorSearch)
+
+### Webhooks
+- GET /v1/webhooks: List webhooks (/#/reference/listWebhooks)
+- POST /v1/webhooks: Create a webhook (/#/reference/createWebhook)
+- GET /v1/webhooks/{id}: Retrieve a webhook (/#/reference/getWebhook)
+- PATCH /v1/webhooks/{id}: Update a webhook (/#/reference/updateWebhook)
+- DELETE /v1/webhooks/{id}: Delete a webhook (/#/reference/deleteWebhook)
+- POST /v1/webhooks/{id}/test: Send a test event (/#/reference/testWebhook)
+
+### Automations
+- GET /v1/automations: List automations (/#/reference/listAutomations)
+- POST /v1/automations: Create an automation (/#/reference/createAutomation)
+- GET /v1/automations/{id}: Retrieve an automation (/#/reference/getAutomation)
+- PATCH /v1/automations/{id}: Update an automation (/#/reference/updateAutomation)
+- DELETE /v1/automations/{id}: Delete an automation (/#/reference/deleteAutomation)
+- GET /v1/automations/{id}/runs: List runs (/#/reference/listAutomationRuns)
+- POST /v1/automations/{id}/runs: Run now (/#/reference/startAutomationRun)
+- GET /v1/automations/{id}/runs/{run_id}: Retrieve a run (/#/reference/getAutomationRun)
+- POST /v1/automations/{id}/test-delivery: Send a test email (/#/reference/testAutomationDelivery)
+- POST /v1/automations/{id}/runs/{run_id}/retry-delivery: Retry a failed email (/#/reference/retryAutomationRunDelivery)
+
+### Chats
+- GET /v1/chats: List chats (/#/reference/listChats)
+- PATCH /v1/chats/{id}: Rename a chat (/#/reference/renameChat)
+- DELETE /v1/chats/{id}: Delete a chat (/#/reference/deleteChat)
+- GET /v1/chats/{id}/messages: Read a chat transcript (/#/reference/listChatMessages)
+
+### Creator CRM
+- GET /v1/leads: List CRM leads (/#/reference/listCrmLeads)
+- POST /v1/leads: Save a creator to the CRM (/#/reference/createCrmLead)
+- GET /v1/leads/pipeline: Get the pipeline summary (/#/reference/getCrmPipeline)
+- GET /v1/leads/{id}: Retrieve a CRM lead (/#/reference/getCrmLead)
+- PATCH /v1/leads/{id}: Update a CRM lead (/#/reference/updateCrmLead)
+- DELETE /v1/leads/{id}: Remove a CRM lead (/#/reference/deleteCrmLead)
+- POST /v1/leads/{id}/notes: Add a note (/#/reference/addCrmLeadNote)
+- PATCH /v1/leads/{id}/notes/{note_id}: Edit a note (/#/reference/updateCrmLeadNote)
+- DELETE /v1/leads/{id}/notes/{note_id}: Delete a note (/#/reference/deleteCrmLeadNote)
+- POST /v1/leads/{id}/tasks: Add a task (/#/reference/addCrmLeadTask)
+- PATCH /v1/leads/{id}/tasks/{task_id}: Complete or reopen a task (/#/reference/updateCrmLeadTask)
+- DELETE /v1/leads/{id}/tasks/{task_id}: Delete a task (/#/reference/deleteCrmLeadTask)
+- POST /v1/leads/{id}/touches: Log an outreach touch (/#/reference/logCrmLeadTouch)
+- POST /v1/lead-exports: Export CRM leads as CSV (/#/reference/exportCrmLeads)
+- GET /v1/lead-lists: List lead lists (/#/reference/listCrmLeadLists)
+- POST /v1/lead-lists: Create a lead list (/#/reference/createCrmLeadList)
+- GET /v1/lead-lists/{id}: Retrieve a lead list (/#/reference/getCrmLeadList)
+- PATCH /v1/lead-lists/{id}: Rename a lead list (/#/reference/renameCrmLeadList)
+- DELETE /v1/lead-lists/{id}: Delete a lead list (/#/reference/deleteCrmLeadList)
+
+### UGC Database
+- GET /v1/database/creators: Search the UGC Database (/#/reference/listDatabaseCreators)
+- GET /v1/database/creators/{id}: Retrieve a database creator (/#/reference/getDatabaseCreator)
+- GET /v1/database/facets: Get database facets (/#/reference/getDatabaseFacets)
+- POST /v1/database/unlocks: Unlock creators (/#/reference/createDatabaseUnlock)
+
+### UGC Brands
+- GET /v1/ugc-brands: List UGC brands (/#/reference/listUgcBrands)
+- GET /v1/ugc-brands/{id}: Retrieve a UGC brand (/#/reference/getUgcBrand)
+- GET /v1/ugc-brands/{id}/accounts: List a brand's creator accounts (/#/reference/listUgcBrandAccounts)
+- GET /v1/ugc-brands/{id}/accounts/{account_id}: Retrieve a brand account (/#/reference/getUgcBrandAccount)
+- GET /v1/ugc-brands/{id}/videos: List a brand's videos (/#/reference/listUgcBrandVideos)
+- GET /v1/ugc-brands/{id}/playbook: Retrieve a brand's playbook (/#/reference/getUgcBrandPlaybook)
+
+### Creator Tracking
+- GET /v1/tracking: Get the tracking summary (/#/reference/getTrackingSummary)
+- GET /v1/tracking/accounts: List tracked accounts (/#/reference/listTrackedAccounts)
+- POST /v1/tracking/accounts: Track accounts (/#/reference/trackAccounts)
+- GET /v1/tracking/accounts/{id}: Retrieve a tracked account (/#/reference/getTrackedAccount)
+- PATCH /v1/tracking/accounts/{id}: Update a tracked account (/#/reference/updateTrackedAccount)
+- DELETE /v1/tracking/accounts/{id}: Stop tracking an account (/#/reference/untrackAccount)
+- POST /v1/tracking/accounts/{id}/refresh: Refresh a tracked account (/#/reference/refreshTrackedAccount)
+- GET /v1/tracking/accounts/{id}/videos/{video_id}: Retrieve a tracked video (/#/reference/getTrackedVideo)
+- POST /v1/tracking/refresh: Refresh every tracked account (/#/reference/refreshAllTracked)
+- GET /v1/tracking/videos: List tracked videos (/#/reference/listTrackedVideos)
+- GET /v1/tracking/overview: Get the tracking overview (/#/reference/getTrackingOverview)
+- GET /v1/tracking/payouts: Get this week's payouts (/#/reference/getTrackingPayouts)
+- GET /v1/tracking/collections: List collections (/#/reference/listTrackingCollections)
+- POST /v1/tracking/collections: Create a collection (/#/reference/createTrackingCollection)
+- GET /v1/tracking/collections/{id}: Retrieve a collection (/#/reference/getTrackingCollection)
+- PATCH /v1/tracking/collections/{id}: Update a collection (/#/reference/updateTrackingCollection)
+- DELETE /v1/tracking/collections/{id}: Delete a collection (/#/reference/deleteTrackingCollection)
+
+### Applications
+- GET /v1/applications: List applications (/#/reference/listApplications)
+- GET /v1/applications/{id}: Retrieve an application (/#/reference/getApplication)
+- PATCH /v1/applications/{id}: Update an application's status (/#/reference/updateApplicationStatus)
+- POST /v1/application-status-updates: Update many statuses (/#/reference/bulkUpdateApplicationStatus)
+- POST /v1/application-imports: Import applications (/#/reference/importApplications)
+- POST /v1/application-reviews: Review applications (/#/reference/reviewApplications)
+- POST /v1/application-response-drafts: Draft a reply (/#/reference/draftApplicationResponse)
+- POST /v1/application-video-analyses: Analyze a sample video (/#/reference/analyzeApplicationVideo)
+
+### Outreach Integrations
+- GET /v1/integrations: List outreach integrations (/#/reference/listOutreachIntegrations)
+- GET /v1/integrations/auto-send: Retrieve auto-send (/#/reference/getAutoSend)
+- PATCH /v1/integrations/auto-send: Update auto-send (/#/reference/updateAutoSend)
+- GET /v1/integrations/{provider}: Retrieve an outreach integration (/#/reference/getOutreachIntegration)
+- GET /v1/integrations/{provider}/campaigns: List campaigns (/#/reference/listOutreachCampaigns)
+- POST /v1/integrations/{provider}/campaigns/{campaign_id}/leads: Send leads to a campaign (/#/reference/pushLeadsToCampaign)
+
+### Workspace
+- GET /v1/preferences: Retrieve preferences (/#/reference/getPreferences)
+- PATCH /v1/preferences: Update preferences (/#/reference/updatePreferences)
+- GET /v1/preferences/excluded-emails: List excluded creators (/#/reference/listExcludedEmails)
+- POST /v1/preferences/excluded-emails: Exclude creators (/#/reference/addExcludedEmails)
+- DELETE /v1/preferences/excluded-emails: Remove excluded creators (/#/reference/removeExcludedEmails)
+- DELETE /v1/preferences/excluded-emails/{email}: Remove one excluded creator (/#/reference/removeExcludedEmail)
+- GET /v1/account: Retrieve the account (/#/reference/getAccount)
+
+### Research
+- POST /v1/creator-analyses: Analyze a creator account (/#/reference/createCreatorAnalysis)
+- GET /v1/creator-analyses/{id}: Retrieve a creator analysis (/#/reference/getCreatorAnalysis)
+- POST /v1/creator-enrichments: Enrich creators (/#/reference/createCreatorEnrichment)
+- GET /v1/creator-enrichments/{id}: Retrieve a creator enrichment (/#/reference/getCreatorEnrichment)
+- POST /v1/brand-researches: Research a brand's creators (/#/reference/createBrandResearch)
+- GET /v1/brand-researches/{id}: Retrieve a brand research (/#/reference/getBrandResearch)
+- POST /v1/trend-researches: Research current trends (/#/reference/createTrendResearch)
+- GET /v1/trend-researches/{id}: Retrieve a trend research (/#/reference/getTrendResearch)
