@@ -67,16 +67,15 @@ common:
   url: https://ugcagent.app/blog/
 
 apis:
-- aid: ugcagent:ugcagent-api
-  name: UGC Agent API
-  description: 'UGC Agent API as documented publicly: 1 operations. Contract generated from the documentation by API Evangelist (2026-10-12);
-    not the provider''s own document.'
+- aid: ugcagent:ugcagent-messages-api
+  name: UGC Agent Messages API
+  description: The Messages API from UGC Agent — 1 operation(s) for messages.
   humanURL: https://ugcagent.app/developers/api
+  tags:
+  - Messages
   properties:
   - type: OpenAPI
-    url: openapi/_ae-authored/ugcagent-openapi-generated.yml
-    x-provenance: generated
-
+    url: openapi/ugcagent-messages-api-openapi.yml
 x-submission-notes: 'creator sourcing: database of 28k+ Instagram/TikTok creators, CRM, tracking | Kin
   approved listing 2026-10-12 (case-by-case: real 3.1 API, but its product is a harvested database of
   Instagram/TikTok creators'' personal data)'

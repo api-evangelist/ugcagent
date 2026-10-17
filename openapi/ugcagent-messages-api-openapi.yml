@@ -1,0 +1,33 @@
+openapi: 3.2.0
+info:
+  title: UGC Agent Messages API
+  version: '2026-10-12'
+  description: 'GENERATED FROM DOCUMENTATION by API Evangelist on 2026-10-12: 1 operation(s) read from 1 public documentation page(s) (each operation names its page in x-source). This is not the provider''s published contract; UGC Agent has published no machine-readable contract that the pipeline could find. Engine: local.'
+  x-evidence-tiers:
+    code-example: 0
+    documentation: 1
+    pages-with-code: 0
+    pages-read: 1
+  x-generated-from: documentation
+  x-provenance: generated
+  x-authored-by: API Evangelist
+  x-generated: '2026-10-12'
+  x-generator: generate-contract-from-docs.py
+  x-engine: local
+  x-sources:
+  - https://ugcagent.app/developers/api
+tags:
+- name: Messages
+paths:
+  /v1/messages:
+    post:
+      operationId: post_v1_messages
+      tags:
+      - Messages
+      summary: Send a creator task as a message using POST /v1/messages
+      x-source: https://ugcagent.app/developers/api
+      responses:
+        '201':
+          description: Success (status as documented)
+      x-evidence:
+        kind: documentation
